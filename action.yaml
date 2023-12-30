@@ -1,0 +1,15 @@
+name: 'UPM subtree split'
+description: 'GitHub action to perform subtree split to upm branch'
+branding:
+  icon: 'box'
+  color: 'blue'
+
+inputs:
+  package-root:
+    description: 'Path to the package root which contains package.json'
+    required: false
+    default: ''
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
