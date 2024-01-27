@@ -22,8 +22,8 @@ const main = async () => {
             packageRoot = files[0].replace(`${workspace}/`, '');
         }
 
-        await exec.exec('git', ['config', '--global', 'user.name', 'github-actions']);
-        await exec.exec('git', ['config', '--global', 'user.email', 'github-actions@github.com']);
+        // await exec.exec('git', ['config', '--global', 'user.name', 'github-actions']);
+        // await exec.exec('git', ['config', '--global', 'user.email', 'github-actions@github.com']);
         await exec.exec('git', ['subtree', 'split', '--prefix', packageRoot, '-b', 'upm']);
         await exec.exec('git', ['push', '-u', 'origin', 'upm', '--force']);
 
