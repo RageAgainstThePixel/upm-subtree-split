@@ -18,6 +18,6 @@ jobs:
       with:
         fetch-depth: 0
 
-    - uses: RageAgainstThePixel/upm-subtree-split@v1
+    - uses: RageAgainstThePixel/upm-subtree-split@v1.1
 
 ```
