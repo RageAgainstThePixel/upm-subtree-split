@@ -30275,42 +30275,36 @@ module.exports = parseParams
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
+// This entry need to be wrapped in an IIFE because it need to be in strict mode.
 (() => {
+"use strict";
+var exports = __webpack_exports__;
 
+Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __nccwpck_require__(2186);
 const exec = __nccwpck_require__(1514);
 const glob = __nccwpck_require__(8090);
-
+const WORKSPACE = process.env.GITHUB_WORKSPACE;
 const main = async () => {
     try {
-        const packageRootInput = core.getInput('package-root');
-        const workspace = process.env.GITHUB_WORKSPACE;
-
-        // Search for the package directory if not provided
-        var packageRoot = packageRootInput;
-
-        if (!packageRoot) {
-            const globber = await glob.create('**/Packages/com.*', { followSymbolicLinks: false });
-            const files = await globber.glob();
-
-            if (files.length === 0) {
-                throw Error('No package directories found.');
-            }
-
-            packageRoot = files[0].replace(`${workspace}/`, '');
+        const packageRootInput = core.getInput(`package-root`) || `${WORKSPACE}/**/Packages/com.*`;
+        let packagePath = undefined;
+        const globber = await glob.create(packageRootInput, { followSymbolicLinks: false });
+        const files = await globber.glob();
+        if (files.length === 0) {
+            throw Error('No package found.');
         }
-
-        // await exec.exec('git', ['config', '--global', 'user.name', 'github-actions']);
-        // await exec.exec('git', ['config', '--global', 'user.email', 'github-actions@github.com']);
-        await exec.exec('git', ['subtree', 'split', '--prefix', packageRoot, '-b', 'upm']);
+        if (files.length > 1) {
+            throw Error('Multiple packages found!');
+        }
+        packagePath = files[0].replace(`${WORKSPACE}/`, '');
+        await exec.exec('git', ['subtree', 'split', '--prefix', packagePath, '-b', 'upm']);
         await exec.exec('git', ['push', '-u', 'origin', 'upm', '--force']);
-
-    } catch (error) {
+    }
+    catch (error) {
         core.setFailed(error.message);
     }
-}
-
+};
 main();
 
 })();
