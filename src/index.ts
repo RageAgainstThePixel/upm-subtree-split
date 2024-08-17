@@ -7,7 +7,7 @@ const WORKSPACE = process.env.GITHUB_WORKSPACE;
 
 const main = async () => {
     try {
-        const packageRootInput = core.getInput(`package-root`) || `${WORKSPACE}/**/Packages/com.*`;
+        const packageRootInput = core.getInput(`package-root`) || `**/Packages/com.*`;
         let packagePath = undefined;
         const globber = await glob.create(packageRootInput, { followSymbolicLinks: false });
         const files = await globber.glob();
