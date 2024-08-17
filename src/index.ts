@@ -9,7 +9,7 @@ const main = async () => {
     try {
         const packageRootInput = core.getInput(`package-root`) || `**/Packages/com.*`;
         let packagePath = undefined;
-        const globber = await glob.create(packageRootInput, { followSymbolicLinks: false });
+        const globber = await glob.create(packageRootInput, { followSymbolicLinks: false, implicitDescendants: false });
         const files = await globber.glob();
         if (files.length === 0) {
             throw Error('No package found.');
