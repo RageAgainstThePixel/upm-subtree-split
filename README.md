@@ -13,5 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     - uses: RageAgainstThePixel/upm-subtree-split@v1
 ```
