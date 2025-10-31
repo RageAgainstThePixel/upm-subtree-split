@@ -30021,6 +30021,7 @@ const path = __nccwpck_require__(1017);
 const WORKSPACE = process.env.GITHUB_WORKSPACE;
 const main = async () => {
     try {
+        const tagBranch = core.getInput(`tag-branch`) === 'false' ? false : true;
         const packageRootInput = core.getInput(`package-root`) || `**/Packages/**/package.json`;
         let packagePath = undefined;
         const globber = await glob.create(packageRootInput);
@@ -30035,25 +30036,64 @@ const main = async () => {
         core.info(`package.json: ${packagePath}`);
         let packageRootDir = path.dirname(packagePath).replace(`${WORKSPACE}/`, '');
         core.info(`splitting package root dir: ${packageRootDir}`);
-        await (0, exec_1.exec)('git', ['config', '--global', 'user.name', 'github-actions[bot]']);
-        await (0, exec_1.exec)('git', ['config', '--global', 'user.email', 'github-actions[bot]@users.noreply.github.com']);
-        await (0, exec_1.exec)('git', ['fetch', '--all', '--tags']);
-        await (0, exec_1.exec)('git', ['subtree', 'split', '--prefix', packageRootDir, '-b', 'upm']);
-        await (0, exec_1.exec)('git', ['push', '-u', 'origin', 'upm', '--force']);
-        const tagBranch = core.getInput(`tag-branch`) === 'false' ? false : true;
+        const packageJsonContent = await fs.readFile(packagePath, 'utf8');
+        const packageJson = JSON.parse(packageJsonContent);
+        const version = packageJson.version;
+        await git(['config', '--global', 'user.name', 'github-actions[bot]']);
+        await git(['config', '--global', 'user.email', 'github-actions[bot]@users.noreply.github.com']);
+        await git(['fetch', '--all', '--tags']);
         if (tagBranch) {
-            const packageJsonContent = await fs.readFile(packagePath, 'utf8');
-            const packageJson = JSON.parse(packageJsonContent);
-            const version = packageJson.version;
-            await (0, exec_1.exec)('git', ['tag', version, 'upm']);
-            await (0, exec_1.exec)('git', ['push', 'origin', version]);
+            const tags = await getTags();
+            if (tags.has(version)) {
+                throw new Error(`Tag ${version} already exists.`);
+            }
+        }
+        await git(['subtree', 'split', '--prefix', packageRootDir, '-b', 'upm']);
+        await git(['push', '-u', 'origin', 'upm', '--force']);
+        if (tagBranch) {
+            await git(['tag', version, 'upm']);
+            await git(['push', 'origin', version]);
         }
     }
     catch (error) {
-        core.setFailed(error.message);
+        core.setFailed(error);
     }
 };
 main();
+async function getTags() {
+    const semverRegex = /^v?\d+\.\d+\.\d+$/;
+    const tags = (await git(['tag', '--list', `--sort=version:refname`])).split('\n').filter(tag => tag.trim() !== '').filter(tag => semverRegex.test(tag));
+    const tagMap = new Map();
+    for (let i = 0; i < tags.length; i++) {
+        const tag = tags[i];
+        tagMap.set(tag, await getParentSha(tag));
+    }
+    return tagMap;
+}
+async function getParentSha(ref) {
+    return (await git(['rev-parse', '--verify', `${ref}^{}`])).trim();
+}
+async function git(params, warnOnError = true) {
+    let output = '';
+    let error = '';
+    const exitCode = await (0, exec_1.exec)('git', params, {
+        listeners: {
+            stdout: (data) => {
+                output += data.toString();
+            },
+            stderr: (data) => {
+                error += data.toString();
+            }
+        }
+    });
+    if (exitCode !== 0) {
+        throw new Error(error);
+    }
+    if (error && warnOnError) {
+        core.warning(error);
+    }
+    return output;
+}
 
 })();
 
