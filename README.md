@@ -14,7 +14,7 @@ jobs:
     - uses: actions/checkout@v5
     - uses: RageAgainstThePixel/upm-subtree-split@v1
       with:
-        package-root: 'Packages/com.company.package/package.json'
+        package-root: Packages/com.company.package-name/package.json
         tag-branch: true
 ```
 
@@ -22,5 +22,5 @@ jobs:
 
 | name | description | required |
 | ---- | ----------- | -------- |
-| package-root | Path to the package root which contains package.json. Glob patterns are supported. | false |
+| package-root | Path to the package root which contains package.json. Defaults to `**/Packages/**/package.json` glob search. | false |
 | tag-branch | Whether to tag the branch after split with the package version. | false |
