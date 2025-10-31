@@ -28167,6 +28167,14 @@ module.exports = require("fs");
 
 /***/ }),
 
+/***/ 3292:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("fs/promises");
+
+/***/ }),
+
 /***/ 3685:
 /***/ ((module) => {
 
@@ -30006,24 +30014,40 @@ var exports = __webpack_exports__;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __nccwpck_require__(2186);
-const exec = __nccwpck_require__(1514);
 const glob = __nccwpck_require__(8090);
+const exec_1 = __nccwpck_require__(1514);
+const fs = __nccwpck_require__(3292);
+const path = __nccwpck_require__(1017);
 const WORKSPACE = process.env.GITHUB_WORKSPACE;
 const main = async () => {
     try {
-        const packageRootInput = core.getInput(`package-root`) || `**/Packages/com.*`;
+        const packageRootInput = core.getInput(`package-root`) || `**/Packages/**/package.json`;
         let packagePath = undefined;
-        const globber = await glob.create(packageRootInput, { followSymbolicLinks: false, implicitDescendants: false });
+        const globber = await glob.create(packageRootInput);
         const files = await globber.glob();
         if (files.length === 0) {
-            throw Error('No package found.');
+            throw Error('No package.json found.');
         }
         if (files.length > 1) {
             throw Error(`Multiple packages found!\n${files.join('\n')}`);
         }
-        packagePath = files[0].replace(`${WORKSPACE}/`, '');
-        await exec.exec('git', ['subtree', 'split', '--prefix', packagePath, '-b', 'upm']);
-        await exec.exec('git', ['push', '-u', 'origin', 'upm', '--force']);
+        packagePath = files[0];
+        core.info(`package.json: ${packagePath}`);
+        let packageRootDir = path.dirname(packagePath).replace(`${WORKSPACE}/`, '');
+        core.info(`splitting package root dir: ${packageRootDir}`);
+        await (0, exec_1.exec)('git', ['config', '--global', 'user.name', 'github-actions[bot]']);
+        await (0, exec_1.exec)('git', ['config', '--global', 'user.email', 'github-actions[bot]@users.noreply.github.com']);
+        await (0, exec_1.exec)('git', ['fetch', '--all', '--tags']);
+        await (0, exec_1.exec)('git', ['subtree', 'split', '--prefix', packageRootDir, '-b', 'upm']);
+        await (0, exec_1.exec)('git', ['push', '-u', 'origin', 'upm', '--force']);
+        const tagBranch = core.getInput(`tag-branch`) === 'false' ? false : true;
+        if (tagBranch) {
+            const packageJsonContent = await fs.readFile(packagePath, 'utf8');
+            const packageJson = JSON.parse(packageJsonContent);
+            const version = packageJson.version;
+            await (0, exec_1.exec)('git', ['tag', version, 'upm']);
+            await (0, exec_1.exec)('git', ['push', 'origin', version]);
+        }
     }
     catch (error) {
         core.setFailed(error.message);

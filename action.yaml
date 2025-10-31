@@ -1,13 +1,16 @@
-name: 'UPM subtree split'
-description: 'GitHub Action to perform subtree split on Unity package to upm branch.'
+name: UPM subtree split
+description: GitHub Action to perform subtree split on Unity package to upm branch.
 branding:
-  icon: 'shuffle'
-  color: 'blue'
+  icon: shuffle
+  color: blue
 inputs:
   package-root:
-    description: 'Path to the package root which contains package.json'
+    description: Path to the package root which contains package.json
     required: false
-    default: ''
+  tag-branch:
+    description: Whether to tag the branch after split with the package version.
+    required: false
+    default: 'false'
 runs:
-  using: 'node20'
-  main: 'dist/index.js'
+  using: node20
+  main: dist/index.js

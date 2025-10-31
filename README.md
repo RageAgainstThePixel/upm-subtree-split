@@ -6,14 +6,21 @@ GitHub Action to perform subtree split on Unity package to upm branch.
 name: upm-subtree-split
 on:
   push:
-    branches:
-    - main
+    branches: [main]
 jobs:
   upm-subtree-split:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+    - uses: actions/checkout@v5
     - uses: RageAgainstThePixel/upm-subtree-split@v1
+      with:
+        package-root: 'Packages/com.company.package/package.json'
+        tag-branch: true
 ```
+
+## inputs
+
+| name | description | required |
+| ---- | ----------- | -------- |
+| package-root | Path to the package root which contains package.json. Glob patterns are supported. | false |
+| tag-branch | Whether to tag the branch after split with the package version. | false |
