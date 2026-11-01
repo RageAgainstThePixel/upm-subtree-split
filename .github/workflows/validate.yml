@@ -1,0 +1,66 @@
+name: validate
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['*']
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: action
+      # a package repo in the workspace, pushing to a local bare origin
+      - name: Create test package repo
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init -q --bare "${RUNNER_TEMP}/origin.git"
+          git init -q -b main
+          echo "action/" >> .git/info/exclude
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p Packages/com.test.package
+          echo '{ "name": "com.test.package", "version": "1.0.0" }' > Packages/com.test.package/package.json
+          echo "# test" > README.md
+          git add .
+          git commit -q -m "test package"
+          git remote add origin "${RUNNER_TEMP}/origin.git"
+      - uses: ./action # RageAgainstThePixel/upm-subtree-split
+      - name: Verify upm branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          files="$(git -C "${RUNNER_TEMP}/origin.git" ls-tree --name-only upm)"
+          echo "${files}"
+          if [ "${files}" != "package.json" ]; then
+            echo "::error::upm branch should only contain the package contents"
+            exit 1
+          fi
+          git branch -D upm
+      - uses: ./action # RageAgainstThePixel/upm-subtree-split
+        with:
+          package-root: Packages/com.test.package
+      - name: Verify upm branch with package-root
+        shell: bash
+        run: |
+          set -euo pipefail
+          files="$(git -C "${RUNNER_TEMP}/origin.git" ls-tree --name-only upm)"
+          echo "${files}"
+          if [ "${files}" != "package.json" ]; then
+            echo "::error::upm branch should only contain the package contents"
+            exit 1
+          fi

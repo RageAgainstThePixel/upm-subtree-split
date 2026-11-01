@@ -2,6 +2,7 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as glob from '@actions/glob';
+import * as path from 'path';
 
 const WORKSPACE = process.env.GITHUB_WORKSPACE;
 
@@ -17,7 +18,7 @@ const main = async () => {
         if (files.length > 1) {
             throw Error(`Multiple packages found!\n${files.join('\n')}`);
         }
-        packagePath = files[0].replace(`${WORKSPACE}/`, '');
+        packagePath = path.relative(WORKSPACE || process.cwd(), files[0]).split(path.sep).join('/');
         await exec.exec('git', ['subtree', 'split', '--prefix', packagePath, '-b', 'upm']);
         await exec.exec('git', ['push', '-u', 'origin', 'upm', '--force']);
     } catch (error) {
