@@ -35200,6 +35200,7 @@ function glob_hashFiles(patterns_1) {
 
 
 
+
 const WORKSPACE = process.env.GITHUB_WORKSPACE;
 const main = async () => {
     try {
@@ -35213,7 +35214,7 @@ const main = async () => {
         if (files.length > 1) {
             throw Error(`Multiple packages found!\n${files.join('\n')}`);
         }
-        packagePath = files[0].replace(`${WORKSPACE}/`, '');
+        packagePath = external_path_namespaceObject.relative(WORKSPACE || process.cwd(), files[0]).split(external_path_namespaceObject.sep).join('/');
         await exec_exec('git', ['subtree', 'split', '--prefix', packagePath, '-b', 'upm']);
         await exec_exec('git', ['push', '-u', 'origin', 'upm', '--force']);
     }
